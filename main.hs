@@ -1,6 +1,7 @@
 import Graphics.UI.SDL as SDL
 import Graphics.UI.SDL.TTF as TTF
 import Graphics.UI.SDL.Image as SDLi
+-- import Debug.Trace
 
 -- import System.Random
 
@@ -31,7 +32,8 @@ main = do
 
   char <- SDLi.load "image/rpg_sprites_10.PNG"
 
-  let b = [(x, y, val) | x <- [0..width-1], y <- [0..height-1], val <-[1,2] , val == ((y+x) `mod` 2)]
+  let b = [(x, y, if x == 1 && y ==1 then 1 else 0) | x <- [0..width-1], y <- [0..height-1]]
+  putStrLn $ show b
 
   gameLoop $ GameState char True [(10, 10)] b
 
@@ -59,14 +61,23 @@ tickGame gs = do
   let ret = foldl handleEvent gs events
   return ret
 
+--Explore map
+handleClick :: GameState -> Coord -> GameState
+handleClick gs (mx, my) =  gs {board = board'}
+  where board' = map (u (mx, my)) (board gs)
+        (_,_,zz) = head $ filter (\(x',y',_) -> x' == mx && y' == my) (board gs)
+        u = (\(x, y) (x', y', val) -> 
+          if zz == 1 && abs (x' - x) <= 1 && abs (y' - y) <= 1
+            then (x', y', 1) 
+            else (x', y', val))
+
 handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =
   case e of
     KeyDown (Keysym SDLK_SPACE _ _) -> gs {running = False}
-    MouseButtonDown x y ButtonLeft -> gs { 
-      clickpos = ((fromIntegral x, fromIntegral y):clickpos gs) 
-    }
-    _ -> gs
+    MouseButtonDown x y ButtonLeft  -> 
+      handleClick gs (((fromIntegral x) `quot` 32), ((fromIntegral y) `quot` 32)) 
+    _                               -> gs
     
 -- stolen code from mr cadr, works nice
 getEvents :: IO Event -> [Event] -> IO [Event]
