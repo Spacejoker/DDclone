@@ -1,21 +1,28 @@
 import Graphics.UI.SDL as SDL
-import Graphics.UI.SDL.Events as SDLe
 import Graphics.UI.SDL.TTF as TTF
 import Graphics.UI.SDL.Image as SDLi
 
 -- import System.Random
+
+height :: Int
+height = 19
+
+width :: Int
+width = 19
 
 type Coord = (Int, Int)
 
 data GameState = GameState {
   image :: Surface,
   running :: Bool,
-  clickpos :: [Coord]
+  clickpos :: [Coord],
+  board :: [(Int, Int, Int)]
 }
 
+main :: IO()
 main = do
   SDL.init [InitEverything]
-  setVideoMode 800 600 32 []
+  setVideoMode 800 608 32 []
   TTF.init
 
   setCaption "A" "B" 
@@ -24,7 +31,9 @@ main = do
 
   char <- SDLi.load "image/rpg_sprites_10.PNG"
 
-  gameLoop $ GameState char True [(10, 10)]
+  let b = [(x, y, val) | x <- [0..width-1], y <- [0..height-1], val <-[1,2] , val == ((y+x) `mod` 2)]
+
+  gameLoop $ GameState char True [(10, 10)] b
 
 gameLoop :: GameState -> IO ()
 gameLoop gs = do
@@ -36,6 +45,9 @@ gameLoop gs = do
 
   let blit = (\(a, b) -> blitSurface (image gs) (Just $ Rect 70 70 32 32) s (Just (Rect a b 0 0)))
   mapM_ blit (clickpos gs)
+
+  let fillVal = (\(x, y, val) -> fillRect s (Just $ Rect (x*32) (y*32) 32 32) (Pixel (255*(fromIntegral val))))
+  mapM_ fillVal (board gs)
 
   case running gs of
     True -> gameLoop gs'
@@ -64,3 +76,4 @@ getEvents pEvent es = do
   if hasEvent
     then getEvents pEvent (e:es)
     else return (reverse es)
+
