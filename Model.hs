@@ -22,7 +22,7 @@ data Enemy = Enemy {
   ePos :: Coord,
   eHealth :: Int,
   eMaxHealth :: Int
-}
+} deriving Show
 
 data Graphics = Graphics {
   test :: Surface,

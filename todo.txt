@@ -1,2 +1,1 @@
-Mechanics with mobs -> attack, take damage
-Display health on yourself and mob
+display correct mob health

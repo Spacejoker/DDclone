@@ -39,6 +39,13 @@ hpString p = (show $ pHealth p) ++ " / " ++ (show $ pMaxHealth p)
 enemyHpString :: Enemy -> String
 enemyHpString e = (show $ eHealth e) ++ "/" ++ (show $ eMaxHealth e)
 
+drawInfo :: Int -> Surface -> GameState -> IO(Bool)
+drawInfo (-1) _ _ = return (True)
+drawInfo idx s gs= do
+  strToBlit <- renderTextSolid (font gs) (enemyHpString $ (enemies gs) !! idx) (Color 255 0 0)
+  blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
+  
+
 gameLoop :: GameState -> IO ()
 gameLoop gs = do
 
@@ -62,9 +69,10 @@ gameLoop gs = do
   title <- renderTextSolid (font gs) (hpString $ gPlayer gs) (Color 255 0 0)
   blitSurface title Nothing s (Just $ Rect 500 500 0 0)
 
-  let enemyToShow = (enemies gs) !! (gEnemyMouse gs)
-  strToBlit <- renderTextSolid (font gs) (enemyHpString $ enemyToShow) (Color 255 0 0)
-  blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
+  let enemyIdx = gEnemyMouse gs
+
+  -- Draw info panel
+  drawInfo enemyIdx s gs
 
   SDL.flip s
 
@@ -88,11 +96,14 @@ findEnemy :: Coord -> [(Int, Enemy)] -> Int
 findEnemy _ [] = (-1)
 findEnemy pos ((idx, e):es) 
   | ePos e == pos = idx
-  | otherwise = findEnemy pos es
+  | otherwise = trace (show e ++ ", " ++ (show pos)) $ findEnemy pos es
+
+toGrid :: Coord -> Coord
+toGrid (x, y) = (x `quot` 32, y `quot` 32)
 
 handleAttack :: Coord -> GameState -> GameState
 handleAttack pos gs = gs { gPlayer = modPlayer, enemies = a ++ [newEnemy] ++ b }
-  where enemyIdx = findEnemy pos (zip [0,1..] (enemies gs))
+  where enemyIdx = findEnemy (toGrid pos) (zip [0,1..] (enemies gs))
         player = gPlayer gs
         newHp = (pHealth player) - 1
         modPlayer = player { pHealth = newHp }
@@ -122,7 +133,9 @@ handleClick gs (mx, my)
             else (x', y', val))
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
-handleMouseOver gs (x, y) = gs
+handleMouseOver gs pos = gs {gEnemyMouse = enemyIdx + y }
+  where enemyIdx = findEnemy (toGrid pos) (zip [0,1..] (enemies gs))
+        y = trace (show enemyIdx) 0
 
 handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =
