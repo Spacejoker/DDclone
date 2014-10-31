@@ -1,0 +1,2 @@
+Mechanics with mobs -> attack, take damage
+Display health on yourself and mob
