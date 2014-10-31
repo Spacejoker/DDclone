@@ -14,7 +14,8 @@ type Coord = (Int, Int)
 data Player = Player {
   pPos :: Coord,
   pHealth :: Int,
-  pMaxHealth :: Int
+  pMaxHealth :: Int,
+  pDmg :: Int
 }
 
 data Enemy = Enemy {

@@ -27,7 +27,7 @@ main = do
   let pf' = [(x,y,z) | x <- [0..width-1], y <- [0..height-1], z <- [0,1], z == (x+y) `mod` 2]
 
   let gs = Graphics char mainchar mob floor_ wall
-  let p = Player (1,1) 10 10
+  let p = Player (1,1) 10 10 2
   gameLoop $ GameState gs True [(10, 10)] fov' pf' [Enemy (0,0) 10 10] p fnt (0)
 
 drawSprite :: Surface -> Surface -> Coord -> IO(Bool)
@@ -84,12 +84,21 @@ movePlayer p newPos = p {pPos = newPos}
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
 
-findEnemy :: Coord -> [Enemy] -> Int
---findEnemy _ [] = -1
-findEnemy _ _ = 0
+findEnemy :: Coord -> [(Int, Enemy)] -> Int
+findEnemy _ [] = (-1)
+findEnemy pos ((idx, e):es) 
+  | ePos e == pos = idx
+  | otherwise = findEnemy pos es
 
 handleAttack :: Coord -> GameState -> GameState
-handleAttack pos gs = gs {gEnemyMouse = findEnemy pos (enemies gs)}
+handleAttack pos gs = gs { gPlayer = modPlayer, enemies = a ++ [newEnemy] ++ b }
+  where enemyIdx = findEnemy pos (zip [0,1..] (enemies gs))
+        player = gPlayer gs
+        newHp = (pHealth player) - 1
+        modPlayer = player { pHealth = newHp }
+        (a, x:b)  = splitAt enemyIdx (enemies gs)
+        newEnemy = x { eHealth = eHealth x - (pDmg player) }
+
 
 --Explore map
 handleClick :: GameState -> Coord -> GameState
