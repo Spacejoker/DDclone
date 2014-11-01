@@ -1,3 +1,5 @@
+module Main where
+
 import Graphics.UI.SDL as SDL
 import Graphics.UI.SDL.TTF as TTF
 import Graphics.UI.SDL.Image as SDLi
@@ -5,6 +7,7 @@ import Graphics.UI.SDL.Image as SDLi
 import Debug.Trace
 
 import Model
+import ConvertGrid (toGrid, findEnemy, handlePlayerAttack)
 
 main :: IO()
 main = do
@@ -28,7 +31,9 @@ main = do
 
   let gs = Graphics char mainchar mob floor_ wall
   let p = Player (1,1) 10 10 2
-  gameLoop $ GameState gs True [(10, 10)] fov' pf' [Enemy (0,0) 10 10] p fnt (0)
+  let testEnemies = [Enemy (0,0) 10 10, Enemy (3,3) 15 15, Enemy (1,3) 20 20]
+
+  gameLoop $ GameState gs True [(10, 10)] fov' pf' testEnemies p fnt (0)
 
 drawSprite :: Surface -> Surface -> Coord -> IO(Bool)
 drawSprite sprite dest (x, y) = blitSurface sprite Nothing dest (Just $ Rect (x*32) (y*32) 32 32 )
@@ -92,34 +97,18 @@ movePlayer p newPos = p {pPos = newPos}
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
 
-findEnemy :: Coord -> [(Int, Enemy)] -> Int
-findEnemy _ [] = (-1)
-findEnemy pos ((idx, e):es) 
-  | ePos e == pos = idx
-  | otherwise = trace (show e ++ ", " ++ (show pos)) $ findEnemy pos es
 
-toGrid :: Coord -> Coord
-toGrid (x, y) = (x `quot` 32, y `quot` 32)
-
-handleAttack :: Coord -> GameState -> GameState
-handleAttack pos gs = gs { gPlayer = modPlayer, enemies = a ++ [newEnemy] ++ b }
-  where enemyIdx = findEnemy (toGrid pos) (zip [0,1..] (enemies gs))
-        player = gPlayer gs
-        newHp = (pHealth player) - 1
-        modPlayer = player { pHealth = newHp }
-        (a, x:b)  = splitAt enemyIdx (enemies gs)
-        newEnemy = x { eHealth = eHealth x - (pDmg player) }
 
 
 --Explore map
 handleClick :: GameState -> Coord -> GameState
 handleClick gs (mx, my)
-  | notFree = trace "NOT" gs -- not explored yet, nothing happens
-  | hasEnemy = trace "Enemy" (handleAttack (mx, my) gs)
+  | notFree = trace "NOT" gs
+  | hasEnemy = trace "Enemy" (handlePlayerAttack (mx, my) gs)
   | hasWall = trace "Wall" gs
   | otherwise = gs {fov = fov', gPlayer = movePlayer (gPlayer gs) (mx, my)}
   where notFree = (mx, my, 0) `elem` (fov gs)
-        hasEnemy = length (filter (\e -> (snd $ ePos e) == mx && (fst $ ePos e) == my) (enemies gs)) > 0
+        hasEnemy = length (filter (\e -> (fst $ ePos e) == mx && (snd $ ePos e) == my) (enemies gs)) > 0
         hasWall = pfv /= 0
         fov' = map (u (mx, my)) (fov gs)
         (_,_,zz) = valueOf (mx, my) (fov gs) 
@@ -133,9 +122,8 @@ handleClick gs (mx, my)
             else (x', y', val))
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
-handleMouseOver gs pos = gs {gEnemyMouse = enemyIdx + y }
-  where enemyIdx = findEnemy (toGrid pos) (zip [0,1..] (enemies gs))
-        y = trace (show enemyIdx) 0
+handleMouseOver gs pos = gs {gEnemyMouse = enemyIdx }
+  where enemyIdx = findEnemy (toGrid pos) (enemies gs)
 
 handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =
