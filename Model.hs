@@ -15,13 +15,15 @@ data Player = Player {
   pPos :: Coord,
   pHealth :: Int,
   pMaxHealth :: Int,
-  pDmg :: Int
+  pDmg :: Int,
+  pExp :: Int
 } deriving Eq
 
 data Enemy = Enemy {
   ePos :: Coord,
   eHealth :: Int,
-  eMaxHealth :: Int
+  eMaxHealth :: Int,
+  eExpWorth :: Int
 } deriving (Show, Eq)
 
 data Graphics = Graphics {
@@ -40,6 +42,6 @@ data GameState = GameState {
   pf :: [(Int, Int, Int)],
   enemies :: [Enemy],
   gPlayer :: Player,
-  gEnemyMouse :: Int
+  gMousePos :: Coord
 }
 

@@ -6,8 +6,10 @@ import Graphics.UI.SDL.Image as SDLi
 
 import Debug.Trace
 
+-- import Data.List
+
 import Model
-import ConvertGrid (toGrid, findEnemy, handlePlayerAttack)
+import ConvertGrid -- (toGrid, findEnemy, handlePlayerAttack, killDeadEnemies)
 
 main :: IO()
 main = do
@@ -30,10 +32,10 @@ main = do
   let pf' = [(x,y,z) | x <- [0..width-1], y <- [0..height-1], z <- [0,1], z == (x+y) `mod` 2]
 
   let gs = Graphics char mainchar mob floor_ wall fnt
-  let p = Player (1,1) 10 10 2
-  let testEnemies = [Enemy (0,0) 10 10, Enemy (3,3) 15 15, Enemy (1,3) 20 20]
+  let p = Player (1,1) 10 10 2 0
+  let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,3) 15 15 5, Enemy (1,3) 20 20 5]
 
-  gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p 0) gs
+  gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0)) gs
 
 drawSprite :: Surface -> Surface -> Coord -> IO(Bool)
 drawSprite sprite dest (x, y) = blitSurface sprite Nothing dest (Just $ Rect (x*32) (y*32) 32 32 )
@@ -44,13 +46,14 @@ hpString p = (show $ pHealth p) ++ " / " ++ (show $ pMaxHealth p)
 enemyHpString :: Enemy -> String
 enemyHpString e = (show $ eHealth e) ++ "/" ++ (show $ eMaxHealth e)
 
-drawInfo :: Int -> Surface -> Graphics -> GameState-> IO(Bool)
-drawInfo (-1) _ _ _ = return (True)
-drawInfo idx s gx gs= do
-  strToBlit <- renderTextSolid (font gx) (enemyHpString $ (enemies gs) !! idx) (Color 255 0 0)
-  blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
+drawInfo :: Coord -> Surface -> Graphics -> [Enemy]-> IO(Bool)
+drawInfo _ _ _ [] = return (True)
+drawInfo pos s gx (e:es) = do
+  if ePos e == pos then do
+    strToBlit <- renderTextSolid (font gx) (enemyHpString e) (Color 255 0 0)
+    blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
+  else drawInfo pos s gx es
   
-
 gameLoop :: GameState -> Graphics-> IO ()
 gameLoop gs gx = do
 
@@ -74,10 +77,8 @@ gameLoop gs gx = do
   title <- renderTextSolid (font gx) (hpString $ gPlayer gs) (Color 255 0 0)
   blitSurface title Nothing s (Just $ Rect 500 500 0 0)
 
-  let enemyIdx = gEnemyMouse gs
-
   -- Draw info panel
-  drawInfo enemyIdx s gx gs
+  drawInfo (toGrid $ gMousePos gs)  s gx (enemies gs)
 
   SDL.flip s
 
@@ -88,17 +89,15 @@ gameLoop gs gx = do
 tickGame :: GameState -> IO GameState
 tickGame gs = do
   events <- getEvents pollEvent []
-  let ret = foldl handleEvent gs events
-  return ret
+  let gs1 = foldl handleEvent gs events
+  let gs2 = killDeadEnemies gs1
+  return gs2
 
 movePlayer :: Player -> Coord -> Player
 movePlayer p newPos = p {pPos = newPos}
 
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
-
-
-
 
 --Explore map
 handleClick :: GameState -> Coord -> GameState
@@ -122,8 +121,7 @@ handleClick gs (mx, my)
             else (x', y', val))
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
-handleMouseOver gs pos = gs {gEnemyMouse = enemyIdx }
-  where enemyIdx = findEnemy (toGrid pos) (enemies gs)
+handleMouseOver gs pos = gs { gMousePos = pos }
 
 handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =
