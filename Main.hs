@@ -29,11 +29,11 @@ main = do
   let fov' = [(x, y, if x <= 2 && y <= 2 then 1 else 0) | x <- [0..width-1], y <- [0..height-1]]
   let pf' = [(x,y,z) | x <- [0..width-1], y <- [0..height-1], z <- [0,1], z == (x+y) `mod` 2]
 
-  let gs = Graphics char mainchar mob floor_ wall
+  let gs = Graphics char mainchar mob floor_ wall fnt
   let p = Player (1,1) 10 10 2
   let testEnemies = [Enemy (0,0) 10 10, Enemy (3,3) 15 15, Enemy (1,3) 20 20]
 
-  gameLoop $ GameState gs True [(10, 10)] fov' pf' testEnemies p fnt (0)
+  gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p 0) gs
 
 drawSprite :: Surface -> Surface -> Coord -> IO(Bool)
 drawSprite sprite dest (x, y) = blitSurface sprite Nothing dest (Just $ Rect (x*32) (y*32) 32 32 )
@@ -44,15 +44,15 @@ hpString p = (show $ pHealth p) ++ " / " ++ (show $ pMaxHealth p)
 enemyHpString :: Enemy -> String
 enemyHpString e = (show $ eHealth e) ++ "/" ++ (show $ eMaxHealth e)
 
-drawInfo :: Int -> Surface -> GameState -> IO(Bool)
-drawInfo (-1) _ _ = return (True)
-drawInfo idx s gs= do
-  strToBlit <- renderTextSolid (font gs) (enemyHpString $ (enemies gs) !! idx) (Color 255 0 0)
+drawInfo :: Int -> Surface -> Graphics -> GameState-> IO(Bool)
+drawInfo (-1) _ _ _ = return (True)
+drawInfo idx s gx gs= do
+  strToBlit <- renderTextSolid (font gx) (enemyHpString $ (enemies gs) !! idx) (Color 255 0 0)
   blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
   
 
-gameLoop :: GameState -> IO ()
-gameLoop gs = do
+gameLoop :: GameState -> Graphics-> IO ()
+gameLoop gs gx = do
 
   s <- getVideoSurface
   gs' <- tickGame gs
@@ -66,23 +66,23 @@ gameLoop gs = do
 
   mapM_ fillVal explored_pf
 
-  drawSprite (playerSurface $ graphics gs) s (pPos $ gPlayer gs)
+  drawSprite (playerSurface gx) s (pPos $ gPlayer gs)
 
-  let enemySprite = enemySurface $ graphics gs
+  let enemySprite = enemySurface gx
   mapM_ (\e -> drawSprite enemySprite s (ePos e)) (enemies gs)
 
-  title <- renderTextSolid (font gs) (hpString $ gPlayer gs) (Color 255 0 0)
+  title <- renderTextSolid (font gx) (hpString $ gPlayer gs) (Color 255 0 0)
   blitSurface title Nothing s (Just $ Rect 500 500 0 0)
 
   let enemyIdx = gEnemyMouse gs
 
   -- Draw info panel
-  drawInfo enemyIdx s gs
+  drawInfo enemyIdx s gx gs
 
   SDL.flip s
 
   case running gs of
-    True -> gameLoop gs'
+    True -> gameLoop gs' gx
     _ -> return()
 
 tickGame :: GameState -> IO GameState

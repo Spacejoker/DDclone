@@ -34,7 +34,6 @@ data Graphics = Graphics {
 }
 
 data GameState = GameState {
-  --graphics :: Graphics,
   running :: Bool,
   clickpos :: [Coord],
   fov :: [(Int, Int, Int)],

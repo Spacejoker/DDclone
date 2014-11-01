@@ -17,14 +17,16 @@ findEnemyZip pos ((idx, e):es)
 
 handlePlayerAttack :: Coord -> GameState -> GameState
 handlePlayerAttack pos gs = gs { enemies = a ++ [newEnemy] ++ b }
---gPlayer = modPlayer, 
-  where enemyIdx = findEnemy (toGrid pos) (enemies gs)
-        -- player = trace (show enemyIdx) $ gPlayer gs
-        --newHp = (pHealth player) - 1
-        --modPlayer = player { pHealth = newHp }
-        (a, x:b)  = splitAt enemyIdx (enemies gs)
+  where enemyIdx = findEnemy pos (enemies gs)
+        (a, x:b)  = trace (show enemyIdx) (splitAt enemyIdx (enemies gs))
         newEnemy = applyPlayerDamage (gPlayer gs) x
         
 
 applyPlayerDamage :: Player -> Enemy -> Enemy
 applyPlayerDamage player e = e { eHealth = eHealth e - (pDmg player) }
+
+--
+--gPlayer = modPlayer, 
+        -- player = trace (show enemyIdx) $ gPlayer gs
+        --newHp = (pHealth player) - 1
+        --modPlayer = player { pHealth = newHp }
