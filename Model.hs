@@ -16,7 +16,9 @@ data Player = Player {
   pHealth :: Int,
   pMaxHealth :: Int,
   pDmg :: Int,
-  pExp :: Int
+  pExp :: Int,
+  pLevel :: Int,
+  pLevelLimit :: Int
 } deriving Eq
 
 data Enemy = Enemy {

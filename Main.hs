@@ -29,10 +29,12 @@ main = do
   wall <- SDLi.load "image/wall.png"
 
   let fov' = [(x, y, if x <= 2 && y <= 2 then 1 else 0) | x <- [0..width-1], y <- [0..height-1]]
-  let pf' = [(x,y,z) | x <- [0..width-1], y <- [0..height-1], z <- [0,1], z == (x+y) `mod` 2]
+  let makeScarceBoard = \(x, y) -> (x, y, decideZ x y) 
+       where decideZ x' y' = if (abs ((5 -x') + (5 - y'))) `mod` 4 == 0 then 1 else 0
+  let pf' = map makeScarceBoard [(x,y) | x <- [0..width-1], y <- [0..height-1]] --, z <- [0,1], z == (x + y) `mod` 2] -- <- [0,1], z == (x+y) `mod` 2]
 
   let gs = Graphics char mainchar mob floor_ wall fnt
-  let p = Player (1,1) 10 10 2 0
+  let p = Player (1,1) 10 10 2 0 0 10
   let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,3) 15 15 5, Enemy (1,3) 20 20 5]
 
   gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0)) gs
@@ -53,7 +55,27 @@ drawInfo pos s gx (e:es) = do
     strToBlit <- renderTextSolid (font gx) (enemyHpString e) (Color 255 0 0)
     blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
   else drawInfo pos s gx es
+
+checkEnemiesLeft ::GameState -> GameState
+checkEnemiesLeft gs
+  | (length $ enemies gs) == 0 = gs {running = False }
+  | otherwise = gs
+
+dispString :: String -> Coord -> Font -> Surface -> IO Bool
+dispString s c f surface= do
+  title <- renderTextSolid f s (Color 255 0 0)
+  blitSurface title Nothing surface (Just $ Rect (fst c) (snd c) 0 0)
   
+drawPlayerInfo :: GameState -> Graphics -> Surface -> IO()
+drawPlayerInfo gs gx s = do
+  let p = gPlayer gs
+
+  dispString (hpString p) (670, 500) (font gx) s
+  dispString ((show $ pExp p) ++ " / " ++ (show $ (pLevelLimit p)) ) (670, 520) (font gx) s
+  dispString ("Level  " ++ (show $ pLevel p)) (670, 540) (font gx) s
+
+  return ()
+
 gameLoop :: GameState -> Graphics-> IO ()
 gameLoop gs gx = do
 
@@ -72,10 +94,9 @@ gameLoop gs gx = do
   drawSprite (playerSurface gx) s (pPos $ gPlayer gs)
 
   let enemySprite = enemySurface gx
-  mapM_ (\e -> drawSprite enemySprite s (ePos e)) (enemies gs)
+  mapM_ (\e -> drawSprite enemySprite s (ePos e)) ( filter (\e -> (fst $ ePos e, snd $ ePos e, 1) `elem` (fov gs)) (enemies gs))
 
-  title <- renderTextSolid (font gx) (hpString $ gPlayer gs) (Color 255 0 0)
-  blitSurface title Nothing s (Just $ Rect 500 500 0 0)
+  drawPlayerInfo gs gx s
 
   -- Draw info panel
   drawInfo (toGrid $ gMousePos gs)  s gx (enemies gs)
@@ -86,11 +107,23 @@ gameLoop gs gx = do
     True -> gameLoop gs' gx
     _ -> return()
 
+levelPlayer :: Player -> Player
+levelPlayer p = p { pLevelLimit = newLevelLimit, pExp = newExp, pLevel = newLevel }
+  where newExp = (pExp p) - (pLevelLimit p)
+        newLevelLimit = (pLevelLimit p) + 10
+        newLevel = (pLevel p) + 1
+
+handleLevelUp :: GameState -> GameState
+handleLevelUp gs
+  | pExp p >= pLevelLimit p = handleLevelUp gs { gPlayer = levelPlayer $ gPlayer gs }
+  | otherwise = gs
+    where p = gPlayer gs
+
 tickGame :: GameState -> IO GameState
 tickGame gs = do
   events <- getEvents pollEvent []
   let gs1 = foldl handleEvent gs events
-  let gs2 = killDeadEnemies gs1
+  let gs2 = (handleLevelUp . checkEnemiesLeft . killDeadEnemies) gs1
   return gs2
 
 movePlayer :: Player -> Coord -> Player
