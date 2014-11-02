@@ -6,11 +6,8 @@ import Graphics.UI.SDL.Image as SDLi
 
 import Debug.Trace
 
--- import Data.List
-
 import Model
-import ConvertGrid -- (toGrid, findEnemy, handlePlayerAttack, killDeadEnemies)
-import ViewFormatter
+import ConvertGrid
 import Render
 import GameLogic
 
