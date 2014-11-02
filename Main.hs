@@ -10,6 +10,9 @@ import Debug.Trace
 
 import Model
 import ConvertGrid -- (toGrid, findEnemy, handlePlayerAttack, killDeadEnemies)
+import ViewFormatter
+import Render
+import GameLogic
 
 main :: IO()
 main = do
@@ -31,50 +34,13 @@ main = do
   let fov' = [(x, y, if x <= 2 && y <= 2 then 1 else 0) | x <- [0..width-1], y <- [0..height-1]]
   let makeScarceBoard = \(x, y) -> (x, y, decideZ x y) 
        where decideZ x' y' = if (abs ((5 -x') + (5 - y'))) `mod` 4 == 0 then 1 else 0
-  let pf' = map makeScarceBoard [(x,y) | x <- [0..width-1], y <- [0..height-1]] --, z <- [0,1], z == (x + y) `mod` 2] -- <- [0,1], z == (x+y) `mod` 2]
+  let pf' = map makeScarceBoard [(x,y) | x <- [0..width-1], y <- [0..height-1]] 
 
   let gs = Graphics char mainchar mob floor_ wall fnt
   let p = Player (1,1) 10 10 2 0 0 10
   let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,3) 15 15 5, Enemy (1,3) 20 20 5]
 
-  gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0)) gs
-
-drawSprite :: Surface -> Surface -> Coord -> IO(Bool)
-drawSprite sprite dest (x, y) = blitSurface sprite Nothing dest (Just $ Rect (x*32) (y*32) 32 32 )
-
-hpString :: Player -> String
-hpString p = (show $ pHealth p) ++ " / " ++ (show $ pMaxHealth p)
-
-enemyHpString :: Enemy -> String
-enemyHpString e = (show $ eHealth e) ++ "/" ++ (show $ eMaxHealth e)
-
-drawInfo :: Coord -> Surface -> Graphics -> [Enemy]-> IO(Bool)
-drawInfo _ _ _ [] = return (True)
-drawInfo pos s gx (e:es) = do
-  if ePos e == pos then do
-    strToBlit <- renderTextSolid (font gx) (enemyHpString e) (Color 255 0 0)
-    blitSurface strToBlit Nothing s (Just $ Rect 500 400 0 0)
-  else drawInfo pos s gx es
-
-checkEnemiesLeft ::GameState -> GameState
-checkEnemiesLeft gs
-  | (length $ enemies gs) == 0 = gs {running = False }
-  | otherwise = gs
-
-dispString :: String -> Coord -> Font -> Surface -> IO Bool
-dispString s c f surface= do
-  title <- renderTextSolid f s (Color 255 0 0)
-  blitSurface title Nothing surface (Just $ Rect (fst c) (snd c) 0 0)
-  
-drawPlayerInfo :: GameState -> Graphics -> Surface -> IO()
-drawPlayerInfo gs gx s = do
-  let p = gPlayer gs
-
-  dispString (hpString p) (670, 500) (font gx) s
-  dispString ((show $ pExp p) ++ " / " ++ (show $ (pLevelLimit p)) ) (670, 520) (font gx) s
-  dispString ("Level  " ++ (show $ pLevel p)) (670, 540) (font gx) s
-
-  return ()
+  gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0) False) gs
 
 gameLoop :: GameState -> Graphics-> IO ()
 gameLoop gs gx = do
@@ -87,14 +53,18 @@ gameLoop gs gx = do
   
   let explored_pf = filter (\(x, y, _) -> (x,y,1) `elem` (fov gs)) (pf gs)
 
-  let fillVal = (\(x, y, val) -> fillRect s (Just $ Rect (x*32) (y*32) 32 32) (Pixel (100*(1+(fromIntegral val)))))
+  let fillVal = (\(x, y, val) -> fillRect s (Just $ Rect (x*32) (y*32) 32 32) 
+                                    (Pixel (100*(1+(fromIntegral val)))))
 
   mapM_ fillVal explored_pf
 
   drawSprite (playerSurface gx) s (pPos $ gPlayer gs)
 
   let enemySprite = enemySurface gx
-  mapM_ (\e -> drawSprite enemySprite s (ePos e)) ( filter (\e -> (fst $ ePos e, snd $ ePos e, 1) `elem` (fov gs)) (enemies gs))
+
+  mapM_ 
+    (\e -> drawSprite enemySprite s (ePos e)) 
+    ( filter (\e -> (fst $ ePos e, snd $ ePos e, 1) `elem` (fov gs)) (enemies gs))
 
   drawPlayerInfo gs gx s
 
@@ -107,27 +77,12 @@ gameLoop gs gx = do
     True -> gameLoop gs' gx
     _ -> return()
 
-levelPlayer :: Player -> Player
-levelPlayer p = p { pLevelLimit = newLevelLimit, pExp = newExp, pLevel = newLevel }
-  where newExp = (pExp p) - (pLevelLimit p)
-        newLevelLimit = (pLevelLimit p) + 10
-        newLevel = (pLevel p) + 1
-
-handleLevelUp :: GameState -> GameState
-handleLevelUp gs
-  | pExp p >= pLevelLimit p = handleLevelUp gs { gPlayer = levelPlayer $ gPlayer gs }
-  | otherwise = gs
-    where p = gPlayer gs
-
 tickGame :: GameState -> IO GameState
 tickGame gs = do
   events <- getEvents pollEvent []
   let gs1 = foldl handleEvent gs events
   let gs2 = (handleLevelUp . checkEnemiesLeft . killDeadEnemies) gs1
   return gs2
-
-movePlayer :: Player -> Coord -> Player
-movePlayer p newPos = p {pPos = newPos}
 
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
@@ -140,7 +95,7 @@ handleClick gs (mx, my)
   | hasWall = trace "Wall" gs
   | otherwise = gs {fov = fov', gPlayer = movePlayer (gPlayer gs) (mx, my)}
   where notFree = (mx, my, 0) `elem` (fov gs)
-        hasEnemy = length (filter (\e -> (fst $ ePos e) == mx && (snd $ ePos e) == my) (enemies gs)) > 0
+        hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
         hasWall = pfv /= 0
         fov' = map (u (mx, my)) (fov gs)
         (_,_,zz) = valueOf (mx, my) (fov gs) 

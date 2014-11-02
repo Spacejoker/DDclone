@@ -44,6 +44,7 @@ data GameState = GameState {
   pf :: [(Int, Int, Int)],
   enemies :: [Enemy],
   gPlayer :: Player,
-  gMousePos :: Coord
+  gMousePos :: Coord,
+  gWin :: Bool
 }
 
