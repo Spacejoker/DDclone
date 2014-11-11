@@ -35,7 +35,7 @@ main = do
 
   let gs = Graphics char mainchar mob floor_ wall fnt
   let p = Player (1,1) 10 10 2 0 0 10
-  let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,3) 15 15 5, Enemy (1,3) 20 20 5]
+  let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,2) 15 15 5, Enemy (1,3) 20 20 5]
 
   gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0) False) gs
 
@@ -115,7 +115,7 @@ handleClick gs (mx, my)
         (_,_,pfv) = valueOf (mx, my) (pf gs)
         hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
         fov' = findNewFov (mx, my) gs pfv
-        exploredCnt = (countFovCount $ fov gs) - (countFovCount fov')
+        exploredCnt = if hasEnemy then 0 else (countFovCount $ fov gs) - (countFovCount fov')
         player' = exploreUpdatePlayer (gPlayer gs) exploredCnt -- regen player for exploration
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
