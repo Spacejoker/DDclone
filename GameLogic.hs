@@ -7,8 +7,9 @@ movePlayer p newPos = p {pPos = newPos}
 
 
 levelPlayer :: Player -> Player
-levelPlayer p = p { pLevelLimit = newLevelLimit, pExp = newExp, pLevel = newLevel }
+levelPlayer p = p { pLevelLimit = newLevelLimit, pExp = newExp, pLevel = newLevel, pMaxHealth = newMaxHp , pHealth = newMaxHp}
   where newExp = (pExp p) - (pLevelLimit p)
+        newMaxHp = (pMaxHealth p) + 10
         newLevelLimit = (pLevelLimit p) + 10
         newLevel = (pLevel p) + 1
 
