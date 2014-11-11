@@ -79,22 +79,32 @@ tickGame gs = do
   events <- getEvents pollEvent []
   let gs1 = foldl handleEvent gs events
   let gs2 = (handleLevelUp . checkEnemiesLeft . killDeadEnemies) gs1
-  return gs2
+  let running' = (running gs2) && (pHealth $ gPlayer gs2) > 0
+  return gs2 {running = running'}
 
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
+
+countFovCount :: [(Int, Int, Int)] -> Int
+countFovCount fov' = length $ filter (\(_,_,x) -> x == 0) fov'
+
+exploreUpdatePlayer :: Player -> Int -> Player
+exploreUpdatePlayer p n = p { pHealth = newHealth }
+  where newHealth = trace (show n) min ((pHealth p) + n ) (pMaxHealth p)
 
 --Explore map
 handleClick :: GameState -> Coord -> GameState
 handleClick gs (mx, my)
   | notFree = trace "NOT" gs
-  | hasEnemy = trace "Enemy" (handlePlayerAttack (mx, my) gs)
+  | hasEnemy = trace "Enemy" (handlePlayerAttack (mx, my) gs{ gPlayer = player' })
   | hasWall = trace "Wall" gs
-  | otherwise = gs {fov = fov', gPlayer = movePlayer (gPlayer gs) (mx, my)}
+  | otherwise = gs {fov = fov', gPlayer = movePlayer player' (mx, my)}
   where notFree = (mx, my, 0) `elem` (fov gs)
         hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
         hasWall = pfv /= 0
         fov' = map (u (mx, my)) (fov gs)
+        explored = (countFovCount $ fov gs) - (countFovCount fov')
+        player' = exploreUpdatePlayer (gPlayer gs) explored
         (_,_,zz) = valueOf (mx, my) (fov gs) 
         (_,_,pfv) = valueOf (mx, my) (pf gs)
         u = (\(x, y) (x', y', val) -> 
