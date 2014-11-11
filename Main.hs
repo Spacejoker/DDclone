@@ -92,28 +92,31 @@ exploreUpdatePlayer :: Player -> Int -> Player
 exploreUpdatePlayer p n = p { pHealth = newHealth }
   where newHealth = trace (show n) min ((pHealth p) + n ) (pMaxHealth p)
 
---Explore map
-handleClick :: GameState -> Coord -> GameState
-handleClick gs (mx, my)
-  | notFree = trace "NOT" gs
-  | hasEnemy = trace "Enemy" (handlePlayerAttack (mx, my) gs{ gPlayer = player' })
-  | hasWall = trace "Wall" gs
-  | otherwise = gs {fov = fov', gPlayer = movePlayer player' (mx, my)}
-  where notFree = (mx, my, 0) `elem` (fov gs)
-        hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
-        hasWall = pfv /= 0
-        fov' = map (u (mx, my)) (fov gs)
-        explored = (countFovCount $ fov gs) - (countFovCount fov')
-        player' = exploreUpdatePlayer (gPlayer gs) explored
-        (_,_,zz) = valueOf (mx, my) (fov gs) 
-        (_,_,pfv) = valueOf (mx, my) (pf gs)
+findNewFov :: (Int, Int) -> GameState -> Int -> [(Int, Int, Int)]
+findNewFov (mx, my) gs clickTile = map (u (mx, my)) (fov gs)
+  where (_,_,zz) = valueOf (mx, my) (fov gs) 
         u = (\(x, y) (x', y', val) -> 
           if zz == 1 && 
               abs (x' - x) <= 1 && 
               abs (y' - y) <= 1 &&
-              pfv == 0
+              clickTile == 0
             then (x', y', 1) 
             else (x', y', val))
+
+--Player makes a move
+handleClick :: GameState -> Coord -> GameState
+handleClick gs (mx, my)
+  -- do nothing if it is fov or wall
+  | notFree  || hasWall = gs
+  | hasEnemy = (handlePlayerAttack (mx, my) gs{ gPlayer = player' })
+  | otherwise = gs {fov = fov', gPlayer = movePlayer player' (mx, my)}
+  where notFree = (mx, my, 0) `elem` (fov gs)
+        hasWall = pfv /= 0
+        (_,_,pfv) = valueOf (mx, my) (pf gs)
+        hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
+        fov' = findNewFov (mx, my) gs pfv
+        exploredCnt = (countFovCount $ fov gs) - (countFovCount fov')
+        player' = exploreUpdatePlayer (gPlayer gs) exploredCnt -- regen player for exploration
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
 handleMouseOver gs pos = gs { gMousePos = pos }
