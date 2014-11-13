@@ -1,0 +1,11 @@
+
+cabal sandbox init
+cabal unpack SDL
+cabal sandbox add-source SDL-0.6.5
+
+Edit Graphics/UI/SDL/Events.hsc line 56 to just be import Data.Typeable
+
+cabal install --dependencies-only
+cabal build
+cabal run
+
