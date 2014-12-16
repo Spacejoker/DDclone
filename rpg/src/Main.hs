@@ -49,10 +49,23 @@ handleEvent gs e =
     _                               -> gs
     
 move :: Direction -> GameState -> GameState
-move South gs = modPlayerPos (0, 1)
-  where modPlayerPos (xmod, ymod) = gs{ gPlayer = player {pPos = ((fst pos) + xmod, (snd pos) + ymod)}}
-        player = gPlayer gs
+move South gs = modPlayerPos (0, 1) gs
+move North gs = modPlayerPos (0, -1) gs
+move East gs = modPlayerPos (1, 0) gs
+move West gs = modPlayerPos (-1, 0) gs
+
+modPlayerPos :: Coord -> GameState -> GameState
+modPlayerPos (xmod, ymod) gs = case isFree newPos gs of
+  True -> gs{ gPlayer = player {pPos = newPos}}
+  False -> gs
+  where player = gPlayer gs
         pos = pPos player
+        newPos = ((fst pos) + xmod, (snd pos) + ymod)
+
+isFree :: Coord -> GameState -> Bool
+isFree (x, y) gs = t == Floor
+  where area = gArea gs
+        (_, t) = head $ filter (\((x', y'), _) -> x == x' && y == y') ( gBoard area)
 
 getEvents :: IO Event -> [Event] -> IO [Event]
 getEvents pEvent es = do
