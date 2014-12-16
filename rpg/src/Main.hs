@@ -65,8 +65,13 @@ modPlayerPos (xmod, ymod) gs = case isFree newPos gs of
 
 -- is the tile free for walking? 
 isFree :: Coord -> GameState -> Bool
-isFree (x, y) gs = t == Floor
+isFree (x, y) gs = t == Floor && noNpc (x, y) gs
   where (_, t) = head $ filter (\((x', y'), _) -> x == x' && y == y') (aBoard $ gArea gs)
+
+noNpc :: Coord -> GameState -> Bool
+noNpc testPos gs = (length npc) == 0
+  where npc = filter ((==) testPos) positions
+        positions = map (\x -> nPos x) (aNpcs $ gArea gs)
 
 getEvents :: IO Event -> [Event] -> IO [Event]
 getEvents pEvent es = do
