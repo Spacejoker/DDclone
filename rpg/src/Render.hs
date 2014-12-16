@@ -6,11 +6,24 @@ import Graphics.UI.SDL.Image as SDLi
 import Dungeon
 
 renderWorld :: GameState -> IO ()
-renderWorld w = do
+renderWorld gs = do
   s <- getVideoSurface 
-  renderLayer s 0 (gArea w) (gGx w)
+  renderLayer s 0 (gArea gs) (gGx gs)
+  renderPlayer s (gPlayer gs) (gGx gs)
   SDL.flip s 
   putStr ""
+
+renderPlayer :: Surface -> Player -> [Surface]-> IO(Bool) 
+renderPlayer s p (f:fs) = 
+  blitSurface 
+    f
+    (Just $ Rect 32 32 32 32)
+    s
+    (Just $ getPlayerDispRect p)
+
+getPlayerDispRect :: Player -> Rect
+getPlayerDispRect p = Rect ((fst pos)*32) ((snd pos)*32) 32 32
+  where pos = pPos p
 
 renderLayer :: Surface -> Int -> Area -> [Surface] -> IO()
 renderLayer s _ area gx = do

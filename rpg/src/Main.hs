@@ -42,8 +42,18 @@ handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =
   case e of
     KeyDown (Keysym SDLK_ESCAPE _ _) -> gs {gRunning = False}
+    KeyDown (Keysym SDLK_t _ _) -> move South gs
+    KeyDown (Keysym SDLK_n _ _) -> move North gs
+    KeyDown (Keysym SDLK_h _ _) -> move West gs
+    KeyDown (Keysym SDLK_s _ _) -> move East gs
     _                               -> gs
     
+move :: Direction -> GameState -> GameState
+move South gs = modPlayerPos (0, 1)
+  where modPlayerPos (xmod, ymod) = gs{ gPlayer = player {pPos = ((fst pos) + xmod, (snd pos) + ymod)}}
+        player = gPlayer gs
+        pos = pPos player
+
 getEvents :: IO Event -> [Event] -> IO [Event]
 getEvents pEvent es = do
   e <- pEvent
