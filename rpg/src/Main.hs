@@ -1,0 +1,53 @@
+import Graphics.UI.SDL as SDL
+import Graphics.UI.SDL.TTF as TTF
+import Graphics.UI.SDL.Image as SDLi
+
+import Dungeon
+import Render as R
+
+import Debug.Trace
+
+main :: IO()
+main = do
+
+  SDL.init [InitEverything]
+  setVideoMode 800 600 32 []
+  TTF.init
+
+  enableKeyRepeat 500 30
+
+  gx <- loadGx
+  gameLoop $ makeNewGame gx
+
+loadGx :: IO [Surface]
+loadGx = do
+  tiles <- SDLi.load "image/terrain.png"
+  return [tiles]
+
+gameLoop :: GameState -> IO ()
+gameLoop gs = do
+  gs' <- tickGame gs
+  R.renderWorld gs
+
+  case gRunning gs' of
+    True -> gameLoop gs'
+    _ -> return()
+
+tickGame :: GameState -> IO GameState
+tickGame gs = do
+  events <- getEvents pollEvent []
+  return $ foldl handleEvent gs events
+
+handleEvent :: GameState -> Event -> GameState
+handleEvent gs e =
+  case e of
+    KeyDown (Keysym SDLK_ESCAPE _ _) -> gs {gRunning = False}
+    _                               -> gs
+    
+getEvents :: IO Event -> [Event] -> IO [Event]
+getEvents pEvent es = do
+  e <- pEvent
+  let hasEvent = e /= NoEvent
+  if hasEvent
+    then getEvents pEvent (e:es)
+    else return (reverse es)

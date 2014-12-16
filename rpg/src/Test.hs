@@ -1,4 +1,5 @@
 module TestMain where 
+
 import Test.HUnit
 import Dungeon
 
@@ -14,10 +15,11 @@ basic = TestList
 playerMovement :: Test
 playerMovement = TestList
   [ "Right wall detection" ~: At (1,3) ~=? p ]
-    where g0 = makeNewGame
-          actions = [walk East, walk East]
-          g1 = foldr walk makeNewGame actions
-          p = pPos $ gPlayer g1
+    where p = At (1,3)
+    --where g0 = makeNewGame
+          --actions = [walk East, walk East]
+          --g1 = foldr walk makeNewGame actions
+          --p = pPos $ gPlayer g1
 
 
 
