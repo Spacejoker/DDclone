@@ -35,7 +35,7 @@ main = do
 
   let gs = Graphics char mainchar mob floor_ wall fnt
   let p = Player (1,1) 10 10 2 0 0 10
-  let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,3) 15 15 5, Enemy (1,3) 20 20 5]
+  let testEnemies = [Enemy (0,0) 10 10 5, Enemy (3,2) 15 15 5, Enemy (1,3) 20 20 5]
 
   gameLoop (GameState True [(10, 10)] fov' pf' testEnemies p (0, 0) False) gs
 
@@ -79,31 +79,44 @@ tickGame gs = do
   events <- getEvents pollEvent []
   let gs1 = foldl handleEvent gs events
   let gs2 = (handleLevelUp . checkEnemiesLeft . killDeadEnemies) gs1
-  return gs2
+  let running' = (running gs2) && (pHealth $ gPlayer gs2) > 0
+  return gs2 {running = running'}
 
 valueOf ::  (Int, Int) -> [(Int, Int, a)] -> (Int, Int, a)
 valueOf (mx, my) list = head $ filter (\(x',y',_) -> x' == mx && y' == my) list
 
---Explore map
-handleClick :: GameState -> Coord -> GameState
-handleClick gs (mx, my)
-  | notFree = trace "NOT" gs
-  | hasEnemy = trace "Enemy" (handlePlayerAttack (mx, my) gs)
-  | hasWall = trace "Wall" gs
-  | otherwise = gs {fov = fov', gPlayer = movePlayer (gPlayer gs) (mx, my)}
-  where notFree = (mx, my, 0) `elem` (fov gs)
-        hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
-        hasWall = pfv /= 0
-        fov' = map (u (mx, my)) (fov gs)
-        (_,_,zz) = valueOf (mx, my) (fov gs) 
-        (_,_,pfv) = valueOf (mx, my) (pf gs)
+countFovCount :: [(Int, Int, Int)] -> Int
+countFovCount fov' = length $ filter (\(_,_,x) -> x == 0) fov'
+
+exploreUpdatePlayer :: Player -> Int -> Player
+exploreUpdatePlayer p n = p { pHealth = newHealth }
+  where newHealth = trace (show n) min ((pHealth p) + n ) (pMaxHealth p)
+
+findNewFov :: (Int, Int) -> GameState -> Int -> [(Int, Int, Int)]
+findNewFov (mx, my) gs clickTile = map (u (mx, my)) (fov gs)
+  where (_,_,zz) = valueOf (mx, my) (fov gs) 
         u = (\(x, y) (x', y', val) -> 
           if zz == 1 && 
               abs (x' - x) <= 1 && 
               abs (y' - y) <= 1 &&
-              pfv == 0
+              clickTile == 0
             then (x', y', 1) 
             else (x', y', val))
+
+--Player makes a move
+handleClick :: GameState -> Coord -> GameState
+handleClick gs (mx, my)
+  -- do nothing if it is fov or wall
+  | notFree  || hasWall = gs
+  | hasEnemy = (handlePlayerAttack (mx, my) gs{ gPlayer = player' })
+  | otherwise = gs {fov = fov', gPlayer = movePlayer player' (mx, my)}
+  where notFree = (mx, my, 0) `elem` (fov gs)
+        hasWall = pfv /= 0
+        (_,_,pfv) = valueOf (mx, my) (pf gs)
+        hasEnemy = length (filter (\e -> (mx, my) == ePos e) (enemies gs)) > 0
+        fov' = findNewFov (mx, my) gs pfv
+        exploredCnt = if hasEnemy then 0 else (countFovCount $ fov gs) - (countFovCount fov')
+        player' = exploreUpdatePlayer (gPlayer gs) exploredCnt -- regen player for exploration
 
 handleMouseOver :: GameState -> (Int, Int) -> GameState
 handleMouseOver gs pos = gs { gMousePos = pos }

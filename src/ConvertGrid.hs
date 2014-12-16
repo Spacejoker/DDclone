@@ -15,11 +15,16 @@ findEnemyZip pos ((idx, e):es)
   | ePos e == pos = idx
   | otherwise = findEnemyZip pos es
 
+applyEnemyDamage :: Enemy -> Player -> Player
+applyEnemyDamage e p = p { pHealth = (pHealth p) - 1 }
+
 handlePlayerAttack :: Coord -> GameState -> GameState
-handlePlayerAttack pos gs = gs { enemies = a ++ [newEnemy] ++ b }
+handlePlayerAttack pos gs = gs { enemies = a ++ [newEnemy] ++ b, gPlayer = newPlayer }
   where enemyIdx = findEnemy pos (enemies gs)
+        player = gPlayer gs
         (a, x:b)  = (splitAt enemyIdx (enemies gs))
-        newEnemy = applyPlayerDamage (gPlayer gs) x
+        newEnemy = applyPlayerDamage player x
+        newPlayer = applyEnemyDamage newEnemy player
 
 applyPlayerDamage :: Player -> Enemy -> Enemy
 applyPlayerDamage player e = e { eHealth = eHealth e - (pDmg player) }
