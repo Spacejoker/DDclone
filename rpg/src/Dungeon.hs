@@ -28,8 +28,18 @@ data Direction = North | South | West | East
 data Gx = Gx {
   grassTile :: Surface
 }
+
+data NpcType = Shopkeeper | Unknown
+  deriving Show
+
+data Npc = Npc {
+  nPos :: Coord,
+  npcType :: NpcType
+} deriving Show
+
 data Area = Area {
-  gBoard :: [(Coord, GroundType)]
+  aBoard :: [(Coord, GroundType)],
+  aNpcs :: [Npc]
 } deriving Show
 
 data GameState = GameState {
@@ -58,7 +68,7 @@ charToGroundType c'= case c' of
   '.' -> Floor
 
 dungeon :: Area
-dungeon = Area $ toCoordAndType dungeonMap
+dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper]
 
 toCoordAndType :: [[Char]] -> [(Coord, GroundType)]
 toCoordAndType rows = ret

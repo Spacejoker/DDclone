@@ -54,6 +54,7 @@ move North gs = modPlayerPos (0, -1) gs
 move East gs = modPlayerPos (1, 0) gs
 move West gs = modPlayerPos (-1, 0) gs
 
+-- Test if spot is free. if so walk
 modPlayerPos :: Coord -> GameState -> GameState
 modPlayerPos (xmod, ymod) gs = case isFree newPos gs of
   True -> gs{ gPlayer = player {pPos = newPos}}
@@ -62,10 +63,10 @@ modPlayerPos (xmod, ymod) gs = case isFree newPos gs of
         pos = pPos player
         newPos = ((fst pos) + xmod, (snd pos) + ymod)
 
+-- is the tile free for walking? 
 isFree :: Coord -> GameState -> Bool
 isFree (x, y) gs = t == Floor
-  where area = gArea gs
-        (_, t) = head $ filter (\((x', y'), _) -> x == x' && y == y') ( gBoard area)
+  where (_, t) = head $ filter (\((x', y'), _) -> x == x' && y == y') (aBoard $ gArea gs)
 
 getEvents :: IO Event -> [Event] -> IO [Event]
 getEvents pEvent es = do
