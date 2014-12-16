@@ -46,7 +46,12 @@ handleEvent gs e =
     KeyDown (Keysym SDLK_n _ _) -> move North gs
     KeyDown (Keysym SDLK_h _ _) -> move West gs
     KeyDown (Keysym SDLK_s _ _) -> move East gs
+    KeyDown (Keysym SDLK_a _ _) -> talk gs
     _                               -> gs
+
+-- Open shop on NPC!
+talk :: GameState -> GameState
+talk = undefined
     
 move :: Direction -> GameState -> GameState
 move South gs = modPlayerPos (0, 1) gs
