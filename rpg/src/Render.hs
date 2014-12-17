@@ -67,3 +67,4 @@ blitTile (f:fs) s ((y, x), t) =
 rectFromGroundType :: GroundType -> Rect
 rectFromGroundType Wall = Rect 0 0 32 32
 rectFromGroundType Floor = Rect 0 (11*32) 32 32
+rectFromGroundType Door = Rect 0 (2*32) 32 32

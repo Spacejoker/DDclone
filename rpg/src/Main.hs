@@ -70,7 +70,7 @@ modPlayerPos newFace (xmod, ymod) gs = case isFree newPos gs of
 
 -- is the tile free for walking? 
 isFree :: Coord -> GameState -> Bool
-isFree (x, y) gs = t == Floor && noNpc (x, y) gs
+isFree (x, y) gs = t /= Wall && noNpc (x, y) gs
   where (_, t) = head $ filter (\((x', y'), _) -> x == x' && y == y') (aBoard $ gArea gs)
 
 noNpc :: Coord -> GameState -> Bool

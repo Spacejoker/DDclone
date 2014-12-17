@@ -10,7 +10,7 @@ data Player = Player {
   pFacing :: Direction
 } deriving (Eq, Show)
 
-data GroundType = Wall | Floor 
+data GroundType = Wall | Floor | Door
   deriving (Show, Eq)
 
 --data Position p = At p | Undefined
@@ -57,13 +57,22 @@ dungeonMap =
   ,"#........###...#"
   ,"#..............#"
   ,"#..............#"
-  ,"################"
+  ,"#>##############"
   ]
 
-charToGroundType :: Char -> GroundType
-charToGroundType c'= case c' of
+worldMap = 
+  ["#######"
+  ,"##<####"
+  ,"#....##"
+  ,"#...>##"
+  ,"#######"
+  ]
+
+charToTile :: Char -> GroundType
+charToTile c = case c of
   '#' -> Wall
   '.' -> Floor
+  '>' -> Door
 
 dungeon :: Area
 dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper]
@@ -75,15 +84,8 @@ toCoordAndType rows = ret
         f = \(x, list) -> map (\val -> (x, val)) list
         ret = map (\(y, (x, c)) -> ((x, y), (charToTile c))) $ concat $ map f yNum
 
-charToTile :: Char -> GroundType
-charToTile '#' = Wall
-charToTile _   = Floor
-
 newPlayer :: Player
 newPlayer = Player (1,1) South
 
 makeNewGame :: [Surface] -> GameState
 makeNewGame s = GameState True newPlayer dungeon s
-
-walk :: Direction -> Coord -> Coord
-walk East (x, y) = (y, x+1)
