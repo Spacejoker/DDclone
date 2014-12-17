@@ -14,7 +14,7 @@ main = do
   setVideoMode 800 600 32 []
   TTF.init
 
-  enableKeyRepeat 500 30
+  enableKeyRepeat 0 30
 
   gx <- loadGx
   gameLoop $ makeNewGame gx
@@ -51,14 +51,21 @@ handleEvent gs e =
   case e of
     KeyDown (Keysym SDLK_ESCAPE _ _) -> gs {gRunning = False}
     KeyDown (Keysym SDLK_t _ _) -> move South gs
+    KeyUp   (Keysym SDLK_t _ _) -> stopMove gs
     KeyDown (Keysym SDLK_n _ _) -> move North gs
+    KeyUp   (Keysym SDLK_n _ _) -> stopMove gs
     KeyDown (Keysym SDLK_h _ _) -> move West gs
+    KeyUp   (Keysym SDLK_h _ _) -> stopMove gs
     KeyDown (Keysym SDLK_s _ _) -> move East gs
+    KeyUp   (Keysym SDLK_s _ _) -> stopMove gs
     KeyDown (Keysym SDLK_a _ _) -> talk gs
     _                               -> gs
 
 talk :: GameState -> GameState
 talk = undefined
+
+stopMove :: GameState -> GameState
+stopMove x = x
     
 move :: Direction -> GameState -> GameState
 move South = modPlayerPos South (0, 1)

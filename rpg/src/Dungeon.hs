@@ -39,7 +39,8 @@ data Npc = Npc {
 data Area = Area {
   aBoard :: [(Coord, GroundType)],
   aNpcs :: [Npc],
-  aTransitions :: [(Coord, Int)]
+  aTransitions :: [(Coord, Int)],
+  aEncounterRate :: Maybe (Int, Int)
 } deriving Show
 
 data GameState = GameState {
@@ -59,7 +60,7 @@ screenTransition :: GameState -> Bool
 screenTransition gs = (playerPos gs) `elem` (map fst (areaTransitions gs))
 
 transition ::GameState -> GameState
-transition gs = trace (show nextArea) gs { gArea = areas !! nextArea }
+transition gs = gs { gArea = areas !! nextArea }
   where nextArea = snd $ head $ filter (\(pos, _) -> pos == playerPos gs) (areaTransitions gs)
 
 dungeonMap = 
@@ -76,11 +77,16 @@ dungeonMap =
   ]
 
 worldMap = 
-  ["#######"
-  ,"#######"
-  ,"#....##"
-  ,"#...>##"
-  ,"#######"
+  ["##################"
+  ,"##################"
+  ,"#...............##"
+  ,"#...>#############"
+  ,"#...............##"
+  ,"#...............##"
+  ,"#....######.....##"
+  ,"#....#..........##"
+  ,"#....#..........##"
+  ,"##################"
   ]
 
 areas = [dungeon, world]
@@ -92,10 +98,10 @@ charToTile c = case c of
   '>' -> Door
 
 dungeon :: Area
-dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper] [((1,2), 1)]
+dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper] [((1,2), 1)] Nothing
 
 world :: Area
-world = Area (toCoordAndType worldMap) [] [((4,3), 0)]
+world = Area (toCoordAndType worldMap) [] [((4,3), 0)] (Just (3, 8))
 
 toCoordAndType :: [[Char]] -> [(Coord, GroundType)]
 toCoordAndType rows = ret

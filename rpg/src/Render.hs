@@ -15,7 +15,6 @@ renderWorld gs = do
   SDL.flip s 
   putStr ""
 
-
 renderPlayer :: Surface -> Player -> [Surface]-> IO(Bool) 
 renderPlayer s p ss = 
   blitSurface 
@@ -32,9 +31,8 @@ playerRect p
  | face == North = Rect 0 (48*3) 32 48
  | face == South = Rect 0 0 32 48
  | face == West = Rect 0 (48) 32 48
- | face == East = Rect 0 (48*3) 32 48
+ | face == East = Rect 0 (48*2) 32 48
    where face = pFacing p
- 
 
 getPlayerDispRect :: Player -> Rect
 getPlayerDispRect p = Rect ((fst pos)*32) ((snd pos)*32 - 16) 32 48
@@ -69,3 +67,4 @@ rectFromGroundType :: GroundType -> Rect
 rectFromGroundType Wall = Rect 0 0 32 32
 rectFromGroundType Floor = Rect 0 (11*32) 32 32
 rectFromGroundType Door = Rect 0 (2*32) 32 32
+
