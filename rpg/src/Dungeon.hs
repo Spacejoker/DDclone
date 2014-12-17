@@ -2,6 +2,7 @@
 module Dungeon where
 import Data.Functor
 import Graphics.UI.SDL as SDL
+import Debug.Trace
 
 type Coord = (Int, Int)
 
@@ -37,7 +38,8 @@ data Npc = Npc {
 
 data Area = Area {
   aBoard :: [(Coord, GroundType)],
-  aNpcs :: [Npc]
+  aNpcs :: [Npc],
+  aTransitions :: [(Coord, Int)]
 } deriving Show
 
 data GameState = GameState {
@@ -47,26 +49,41 @@ data GameState = GameState {
   gGx :: [Surface]
 } deriving Show
 
+areaTransitions :: GameState -> [(Coord, Int)]
+areaTransitions = aTransitions . gArea
+
+playerPos :: GameState -> Coord
+playerPos = pPos . gPlayer
+
+screenTransition :: GameState -> Bool
+screenTransition gs = (playerPos gs) `elem` (map fst (areaTransitions gs))
+
+transition ::GameState -> GameState
+transition gs = trace (show nextArea) gs { gArea = areas !! nextArea }
+  where nextArea = snd $ head $ filter (\(pos, _) -> pos == playerPos gs) (areaTransitions gs)
+
 dungeonMap = 
   ["################"
   ,"#..............#"
-  ,"#..............#"
+  ,"#>.............#"
   ,"#..............#"
   ,"#..............#"
   ,"#........###...#"
   ,"#........###...#"
   ,"#..............#"
   ,"#..............#"
-  ,"#>##############"
+  ,"################"
   ]
 
 worldMap = 
   ["#######"
-  ,"##<####"
+  ,"#######"
   ,"#....##"
   ,"#...>##"
   ,"#######"
   ]
+
+areas = [dungeon, world]
 
 charToTile :: Char -> GroundType
 charToTile c = case c of
@@ -75,7 +92,10 @@ charToTile c = case c of
   '>' -> Door
 
 dungeon :: Area
-dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper]
+dungeon = Area (toCoordAndType dungeonMap) [Npc (2,2) Shopkeeper] [((1,2), 1)]
+
+world :: Area
+world = Area (toCoordAndType worldMap) [] [((4,3), 0)]
 
 toCoordAndType :: [[Char]] -> [(Coord, GroundType)]
 toCoordAndType rows = ret

@@ -37,7 +37,14 @@ gameLoop gs = do
 tickGame :: GameState -> IO GameState
 tickGame gs = do
   events <- getEvents pollEvent []
-  return $ foldl handleEvent gs events
+  let gs' = foldl handleEvent gs events
+  return $ updateState gs'
+
+-- Look for conditional events within the state
+updateState :: GameState -> GameState
+updateState gs 
+  | screenTransition gs = transition gs
+  | otherwise = gs
 
 handleEvent :: GameState -> Event -> GameState
 handleEvent gs e =

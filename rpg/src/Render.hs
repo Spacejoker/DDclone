@@ -8,6 +8,7 @@ import Dungeon
 renderWorld :: GameState -> IO ()
 renderWorld gs = do
   s <- getVideoSurface 
+  fillRect s (Just $ Rect 0 0 800 600) (Pixel 0) 
   renderLayer s 0 (gArea gs) (gGx gs)
   renderPlayer s (gPlayer gs) (gGx gs)
   renderNpcs s (gArea gs) (gGx gs)
