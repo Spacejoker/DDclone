@@ -16,15 +16,27 @@ renderWorld gs = do
 
 
 renderPlayer :: Surface -> Player -> [Surface]-> IO(Bool) 
-renderPlayer s p (f:fs) = 
+renderPlayer s p ss = 
   blitSurface 
-    f
-    (Just $ Rect 32 32 32 32)
+    (playerSurface p ss)
+    (Just $ playerRect p)
     s
     (Just $ getPlayerDispRect p)
 
+playerSurface :: Player -> [Surface] -> Surface
+playerSurface _ surfaces = surfaces !! 1
+
+playerRect :: Player -> Rect
+playerRect p
+ | face == North = Rect 0 (48*3) 32 48
+ | face == South = Rect 0 0 32 48
+ | face == West = Rect 0 (48) 32 48
+ | face == East = Rect 0 (48*3) 32 48
+   where face = pFacing p
+ 
+
 getPlayerDispRect :: Player -> Rect
-getPlayerDispRect p = Rect ((fst pos)*32) ((snd pos)*32) 32 32
+getPlayerDispRect p = Rect ((fst pos)*32) ((snd pos)*32 - 16) 32 48
   where pos = pPos p
 
 renderNpcs :: Surface -> Area -> [Surface] -> IO()

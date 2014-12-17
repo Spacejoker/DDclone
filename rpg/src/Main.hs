@@ -22,7 +22,8 @@ main = do
 loadGx :: IO [Surface]
 loadGx = do
   tiles <- SDLi.load "image/terrain.png"
-  return [tiles]
+  player <- SDLi.load "image/yuffie.png"
+  return [tiles, player]
 
 gameLoop :: GameState -> IO ()
 gameLoop gs = do
@@ -49,21 +50,20 @@ handleEvent gs e =
     KeyDown (Keysym SDLK_a _ _) -> talk gs
     _                               -> gs
 
--- Open shop on NPC!
 talk :: GameState -> GameState
 talk = undefined
     
 move :: Direction -> GameState -> GameState
-move South gs = modPlayerPos (0, 1) gs
-move North gs = modPlayerPos (0, -1) gs
-move East gs = modPlayerPos (1, 0) gs
-move West gs = modPlayerPos (-1, 0) gs
+move South = modPlayerPos South (0, 1)
+move North = modPlayerPos North (0, -1)
+move East = modPlayerPos East (1, 0)
+move West = modPlayerPos West (-1, 0)
 
 -- Test if spot is free. if so walk
-modPlayerPos :: Coord -> GameState -> GameState
-modPlayerPos (xmod, ymod) gs = case isFree newPos gs of
-  True -> gs{ gPlayer = player {pPos = newPos}}
-  False -> gs
+modPlayerPos :: Direction -> Coord -> GameState -> GameState
+modPlayerPos newFace (xmod, ymod) gs = case isFree newPos gs of
+  True -> gs { gPlayer = player {pPos = newPos, pFacing = newFace}}
+  False -> gs { gPlayer = player {pFacing = newFace}}
   where player = gPlayer gs
         pos = pPos player
         newPos = ((fst pos) + xmod, (snd pos) + ymod)

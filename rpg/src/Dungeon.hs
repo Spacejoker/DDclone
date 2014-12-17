@@ -7,9 +7,7 @@ type Coord = (Int, Int)
 
 data Player = Player {
   pPos :: Coord,
-  pHealth :: Int,
-  pMaxHealth :: Int,
-  pDmg :: Int
+  pFacing :: Direction
 } deriving (Eq, Show)
 
 data GroundType = Wall | Floor 
@@ -82,7 +80,7 @@ charToTile '#' = Wall
 charToTile _   = Floor
 
 newPlayer :: Player
-newPlayer = Player (1,1) 10 10 1
+newPlayer = Player (1,1) South
 
 makeNewGame :: [Surface] -> GameState
 makeNewGame s = GameState True newPlayer dungeon s
